@@ -1,0 +1,171 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Archived Data</title>
+    <!DOCTYPE html>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{% static 'archiver/styles.css' %}" />
+    <script src="{% static 'archiver/chart.js' %}"></script>
+    <style>
+      body {
+        font-family: "Roboto";
+
+        background: linear-gradient(
+            120deg,
+            rgba(63, 94, 251, 0.8),
+            rgba(106, 208, 217, 0.8)
+          ),
+          url("https://wallpaperplay.com/walls/full/5/4/4/320513.jpg");
+      }
+
+      .main {
+        background-color: #ffffff;
+        width: 400px;
+        height: 400px;
+        margin: 7em auto;
+        border-radius: 1.5em;
+        box-shadow: 0px 11px 35px 2px rgba(0, 0, 0, 0.14);
+      }
+      @media (max-width: 600px) {
+        .main {
+          border-radius: 0px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Archived Data</h1>
+    <form method="get" action="">
+      <input
+        type="text"
+        name="search"
+        value="{{ query }}"
+        placeholder="Search archives..."
+      />
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+
+    <ul>
+      {% for archive in page_obj %}
+      <li>
+        <strong>{{ archive.title }}</strong><br />
+        {{ archive.content }}<br />
+
+        {{ archive.tags }}<br />
+        {{ archive.category }}<br />
+        {{ archive.created_at }}<br />
+      </li>
+      {% empty %}
+      <li>No archives found.</li>
+      {% endfor %}
+    </ul>
+
+    <div class="pagination">
+      <span class="step-links">
+        {% if page_obj.has_previous %}
+        <a href="?page=1{% if query %}&q={{ query }}{% endif %}" class="btn"
+          >&laquo; first</a
+        >
+        <a
+          href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+          class="btn"
+          >previous</a
+        >
+        {% endif %}
+
+        <span class="current">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+        <a
+          href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+          class="btn"
+          >next</a
+        >
+        <a
+          href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}"
+          class="btn"
+          >last &raquo;</a
+        >
+        {% endif %}
+      </span>
+    </div>
+    <a href="{% url 'archive_form' %}" class="btn btn-primary"
+      >Back to Archive</a
+    >
+    <form
+      action="{% url 'clear_archives' %}"
+      method="post"
+      style="display: inline"
+    >
+      {% csrf_token %}
+      <button
+        type="submit"
+        onclick="return confirm('Are you sure you want to clear all archives? This action cannot be undone.');"
+        class="btn btn-primary"
+      >
+        Clear Archives
+      </button>
+    </form>
+    <a href="{% url 'export_archives_csv' %}" class="btn btn-primary"
+      >Export to CSV</a
+    >
+    <canvas
+      id="archiveChart"
+      style="max-width: 100%; height: auto; display: block"
+    ></canvas>
+    {{ labels|json_script:"chartLabels" }} {{ data|json_script:"chartData" }}
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const labels = JSON.parse(
+          document.getElementById("chartLabels").textContent
+        );
+        const data = JSON.parse(
+          document.getElementById("chartData").textContent
+        );
+        const canvas = document.getElementById("archiveChart");
+
+        const minWidth = 1500;
+        const itemWidth = 10; 
+        canvas.style.width =
+          Math.max(minWidth, labels.length * itemWidth) + "px";
+        canvas.style.height = "400px";
+        const ctx = document.getElementById("archiveChart").getContext("2d");
+        const archiveChart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Number of Archives by Month",
+                data: data,
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                borderColor: "rgba(75, 192, 192, 1)",
+                borderWidth: 1,
+                barThickness: 20,
+                categoryPercentage: 0.8,
+                barPercentage: 0.5,
+              },
+            ],
+          },
+          options: {
+            maintainAspectRatio: true,
+
+            scales: {
+              y: {
+                beginAtZero: true,
+              },
+            },
+          },
+        });
+      });
+    </script>
+  </body>
+</html>
